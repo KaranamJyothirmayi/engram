@@ -1,5 +1,6 @@
-import chromadb
 import uuid
+
+import chromadb
 
 
 class VectorIndex:
