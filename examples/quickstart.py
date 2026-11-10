@@ -1,6 +1,7 @@
 """Run with: python examples/quickstart.py"""
 import asyncio
 from pathlib import Path
+
 import engram
 
 engram.configure(Path.home() / ".engram-quickstart")
