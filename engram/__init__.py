@@ -10,6 +10,7 @@ from .graph import MemoryGraph
 from .meta import MetaStore
 from .vector import VectorIndex
 
+# Evaluated once at import time; set ENGRAM_HOME before importing engram.
 _ENGRAM_HOME = Path(os.environ.get("ENGRAM_HOME", Path.home() / ".engram"))
 
 
@@ -62,6 +63,14 @@ class _EngramStore:
         return results
 
     def improve(self, text: str, dataset: str) -> None:
+        """Add new content to a dataset and refresh the whole dataset.
+
+        Calling improve signals that the dataset is being actively curated,
+        so every memory in it is reset to full strength (1.0) — not just the
+        newly added text. This deliberately resets Ebbinghaus decay for the
+        dataset. Use recall (which only reinforces what it returns) if you
+        want decay to remain in effect.
+        """
         self.remember(text, dataset)
         for row in self._meta.get_all_in_dataset(dataset):
             self._meta.update_accessed(row["id"], 1.0)
