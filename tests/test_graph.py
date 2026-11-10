@@ -1,4 +1,5 @@
 import pytest
+
 from engram.graph import MemoryGraph
 
 
