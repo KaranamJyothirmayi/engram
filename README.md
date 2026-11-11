@@ -2,7 +2,7 @@
 
 > Persistent memory for AI agents — graph-backed, vector-searchable, with biologically-inspired memory decay.
 
-[![CI](https://github.com/KJyothirmayi-2025sl93025/engram/actions/workflows/ci.yml/badge.svg)](https://github.com/KJyothirmayi-2025sl93025/engram/actions/workflows/ci.yml)
+[![CI](https://github.com/KaranamJyothirmayi/engram/actions/workflows/ci.yml/badge.svg)](https://github.com/KaranamJyothirmayi/engram/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://python.org)
 
@@ -82,7 +82,7 @@ Data stored in `~/.engram/` by default. Override: `ENGRAM_HOME=/path/to/dir`
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Good first issues are labeled
-[`good first issue`](https://github.com/KJyothirmayi-2025sl93025/engram/issues?q=label%3A%22good+first+issue%22).
+[`good first issue`](https://github.com/KaranamJyothirmayi/engram/issues?q=label%3A%22good+first+issue%22).
 
 ## License
 
