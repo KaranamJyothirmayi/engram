@@ -35,3 +35,15 @@ async def test_list_datasets_excludes_forgotten_dataset():
 
     datasets = await engram.list_datasets()
     assert [(row["name"], row["item_count"]) for row in datasets] == [("lasting", 1)]
+
+
+async def test_list_datasets_counts_remaining_memories_after_pruning():
+    await engram.remember("An old fact. A fresh fact.", dataset="science")
+    store = engram._get_store()
+    old = store._meta.get_all_in_dataset("science")[0]
+    store._meta.update_accessed(old["id"], 0.1)
+
+    assert await engram.prune("science", threshold=0.2) == 1
+
+    datasets = await engram.list_datasets()
+    assert [(row["name"], row["item_count"]) for row in datasets] == [("science", 1)]
