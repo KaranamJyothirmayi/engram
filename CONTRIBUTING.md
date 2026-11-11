@@ -5,7 +5,7 @@ Thank you for your interest! Here's everything you need to get started.
 ## Setup
 
 ```bash
-git clone https://github.com/KJyothirmayi-2025sl93025/engram.git
+git clone https://github.com/KaranamJyothirmayi/engram.git
 cd engram
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
@@ -45,4 +45,4 @@ CI fails on ruff errors.
 
 ## Questions
 
-Open a [GitHub Discussion](https://github.com/KJyothirmayi-2025sl93025/engram/discussions) or comment on the issue.
+Open a [GitHub Discussion](https://github.com/KaranamJyothirmayi/engram/discussions) or comment on the issue.
