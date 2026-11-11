@@ -26,10 +26,36 @@ class MetaStore:
             CREATE TABLE IF NOT EXISTS datasets (
                 name       TEXT PRIMARY KEY,
                 created_at TEXT NOT NULL,
-                item_count INTEGER DEFAULT 0
+                item_count INTEGER DEFAULT 0,
+                decay_rate REAL
             );
         """)
+        columns = {
+            row["name"]
+            for row in self._conn.execute("PRAGMA table_info(datasets)").fetchall()
+        }
+        if "decay_rate" not in columns:
+            # Databases created before per-dataset decay rates existed.
+            self._conn.execute("ALTER TABLE datasets ADD COLUMN decay_rate REAL")
         self._conn.commit()
+
+    def set_decay_rate(self, dataset: str, decay_rate: float | None):
+        self._conn.execute(
+            "INSERT OR IGNORE INTO datasets (name, created_at, item_count)"
+            " VALUES (?, ?, 0)",
+            (dataset, _now()),
+        )
+        self._conn.execute(
+            "UPDATE datasets SET decay_rate = ? WHERE name = ?",
+            (decay_rate, dataset),
+        )
+        self._conn.commit()
+
+    def get_decay_rate(self, dataset: str) -> float | None:
+        row = self._conn.execute(
+            "SELECT decay_rate FROM datasets WHERE name = ?", (dataset,)
+        ).fetchone()
+        return row["decay_rate"] if row else None
 
     def insert(self, text: str, dataset: str) -> str:
         memory_id = str(uuid.uuid4())

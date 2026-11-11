@@ -51,7 +51,8 @@ asyncio.run(main())
 
 | Function | Description |
 |---|---|
-| `remember(text, dataset)` | Store text as memory (strength = 1.0) |
+| `remember(text, dataset, decay_rate=None)` | Store text as memory (strength = 1.0); optionally set the dataset's decay rate |
+| `set_decay_rate(dataset, decay_rate)` | Set a dataset's own decay rate; `None` goes back to the global rate |
 | `recall(query, datasets)` | Search memories; reinforces what's returned |
 | `improve(text, dataset)` | Add content and reset all dataset strengths to 1.0 |
 | `prune(dataset, threshold)` | Remove memories below strength threshold |
@@ -66,6 +67,7 @@ strength(t) = S₀ × e^(−k × hours_elapsed)
 - Default decay rate `k = 0.005` (~50% strength after ~6 days of no access)
 - `recall()` reinforces retrieved memories (+0.3, capped at 1.0)
 - Configure: `ENGRAM_DECAY_RATE=0.002 python your_script.py`
+- Per dataset: `await engram.set_decay_rate("news", 0.05)` (or `remember(..., decay_rate=0.05)`). Datasets without their own rate use the global one. The rate is stored with the dataset, so it survives restarts.
 
 ## Architecture
 

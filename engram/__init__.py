@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from .decay import current_strength, reinforce
+from .decay import current_strength, reinforce, validate_decay_rate
 from .extractor import extract
 from .graph import MemoryGraph
 from .meta import MetaStore
@@ -29,7 +29,11 @@ class _EngramStore:
         self._graph = MemoryGraph(graph_path)
         self._vector = VectorIndex(vector_path)
 
-    def remember(self, text: str, dataset: str) -> None:
+    def remember(
+        self, text: str, dataset: str, decay_rate: float | None = None
+    ) -> None:
+        if decay_rate is not None:
+            self.set_decay_rate(dataset, decay_rate)
         sentences, entities = extract(text)
         for sentence in sentences:
             memory_id = self._meta.insert(sentence, dataset)
@@ -45,7 +49,9 @@ class _EngramStore:
                 continue
             row = rows[0]
             last = datetime.fromisoformat(row["last_accessed_at"])
-            strength = current_strength(row["strength"], last)
+            strength = current_strength(
+                row["strength"], last, self._meta.get_decay_rate(row["dataset"])
+            )
             related_ids = self._graph.get_related(hit["id"])
             related_texts = [
                 r["text"] for r in self._meta.get_by_ids(related_ids)
@@ -77,12 +83,14 @@ class _EngramStore:
 
     def prune(self, dataset: str, threshold: float = 0.2) -> int:
         rows = self._meta.get_all_in_dataset(dataset)
+        decay_rate = self._meta.get_decay_rate(dataset)
         weak_ids = [
             row["id"]
             for row in rows
             if current_strength(
                 row["strength"],
                 datetime.fromisoformat(row["last_accessed_at"]),
+                decay_rate,
             ) < threshold
         ]
         if weak_ids:
@@ -90,6 +98,11 @@ class _EngramStore:
             self._vector.delete_by_ids(weak_ids)
             self._graph.remove_by_ids(weak_ids)
         return len(weak_ids)
+
+    def set_decay_rate(self, dataset: str, decay_rate: float | None) -> None:
+        if decay_rate is not None:
+            decay_rate = validate_decay_rate(decay_rate)
+        self._meta.set_decay_rate(dataset, decay_rate)
 
     def forget(self, dataset: str) -> None:
         self._meta.delete_dataset(dataset)
@@ -117,8 +130,18 @@ def reset() -> None:
     _store = None
 
 
-async def remember(text: str, dataset: str = "default") -> None:
-    _get_store().remember(text, dataset)
+async def remember(
+    text: str, dataset: str = "default", decay_rate: float | None = None
+) -> None:
+    _get_store().remember(text, dataset, decay_rate)
+
+
+async def set_decay_rate(dataset: str, decay_rate: float | None) -> None:
+    """Set how fast memories in ``dataset`` decay.
+
+    ``None`` makes the dataset use the global rate (``ENGRAM_DECAY_RATE``) again.
+    """
+    _get_store().set_decay_rate(dataset, decay_rate)
 
 
 async def recall(query: str, datasets: list[str] | None = None) -> list[dict]:

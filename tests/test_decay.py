@@ -33,3 +33,19 @@ def test_reinforce_caps_at_one():
     from engram.decay import reinforce
     assert reinforce(0.9) == 1.0
     assert reinforce(1.0) == 1.0
+
+
+def test_custom_decay_rate_overrides_global():
+    from engram.decay import DECAY_RATE, current_strength
+
+    past = datetime.now(timezone.utc) - timedelta(hours=100)
+    assert current_strength(1.0, past, DECAY_RATE * 10) < current_strength(1.0, past)
+    assert current_strength(1.0, past, 0.0) == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("bad", [-0.1, float("nan"), float("inf")])
+def test_validate_decay_rate_rejects_bad_values(bad):
+    from engram.decay import validate_decay_rate
+
+    with pytest.raises(ValueError):
+        validate_decay_rate(bad)

@@ -55,3 +55,47 @@ def test_list_datasets(store):
     store.insert("B", "ds2")
     names = [d["name"] for d in store.list_datasets()]
     assert "ds1" in names and "ds2" in names
+
+
+def test_decay_rate_defaults_to_none(store):
+    store.insert("A", "ds1")
+    assert store.get_decay_rate("ds1") is None
+    assert store.get_decay_rate("missing") is None
+
+
+def test_set_decay_rate_per_dataset(store):
+    store.insert("A", "fast")
+    store.insert("B", "slow")
+    store.set_decay_rate("fast", 0.05)
+    store.set_decay_rate("slow", 0.001)
+    assert store.get_decay_rate("fast") == pytest.approx(0.05)
+    assert store.get_decay_rate("slow") == pytest.approx(0.001)
+    store.set_decay_rate("fast", None)
+    assert store.get_decay_rate("fast") is None
+
+
+def test_set_decay_rate_before_insert_keeps_item_count(store):
+    store.set_decay_rate("new", 0.01)
+    store.insert("A", "new")
+    ds = {d["name"]: d for d in store.list_datasets()}["new"]
+    assert ds["item_count"] == 1
+    assert ds["decay_rate"] == pytest.approx(0.01)
+
+
+def test_old_database_gets_decay_rate_column(tmp_path):
+    import sqlite3
+
+    db = tmp_path / "old.db"
+    conn = sqlite3.connect(db)
+    conn.executescript("""
+        CREATE TABLE datasets (
+            name TEXT PRIMARY KEY, created_at TEXT NOT NULL,
+            item_count INTEGER DEFAULT 0
+        );
+        INSERT INTO datasets VALUES ('legacy', '2026-01-01T00:00:00+00:00', 3);
+    """)
+    conn.close()
+    store = MetaStore(str(db))
+    assert store.get_decay_rate("legacy") is None
+    store.set_decay_rate("legacy", 0.02)
+    assert store.get_decay_rate("legacy") == pytest.approx(0.02)

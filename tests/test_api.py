@@ -88,3 +88,42 @@ async def test_recall_isolates_by_dataset():
     await engram.remember("Paris is in France.", dataset="geography")
     results = await engram.recall("Marie Curie", datasets=["geography"])
     assert all(r["dataset"] == "geography" for r in results)
+
+
+def _age_dataset(dataset: str, hours: int):
+    store = engram._get_store()
+    past = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+    store._meta._conn.execute(
+        "UPDATE memories SET last_accessed_at = ?, strength = 1.0 WHERE dataset = ?",
+        (past, dataset),
+    )
+    store._meta._conn.commit()
+
+
+async def test_prune_uses_per_dataset_decay_rate():
+    await engram.remember("Fast fading fact.", dataset="fast", decay_rate=0.05)
+    await engram.remember("Slow fading fact.", dataset="slow", decay_rate=0.0001)
+    _age_dataset("fast", 100)  # e^(-0.05 * 100) ≈ 0.007
+    _age_dataset("slow", 100)  # e^(-0.0001 * 100) ≈ 0.99
+    assert await engram.prune("fast", threshold=0.5) >= 1
+    assert await engram.prune("slow", threshold=0.5) == 0
+
+
+async def test_recall_uses_per_dataset_decay_rate():
+    await engram.remember("The sky is blue.", dataset="slow")
+    await engram.set_decay_rate("slow", 0.0)
+    _age_dataset("slow", 1000)
+    results = await engram.recall("sky", datasets=["slow"])
+    assert results[0]["strength"] == pytest.approx(1.0)  # 1.0 undecayed, capped
+
+
+async def test_set_decay_rate_none_falls_back_to_global():
+    await engram.remember("Fact.", dataset="ds", decay_rate=0.0)
+    await engram.set_decay_rate("ds", None)
+    assert engram._get_store()._meta.get_decay_rate("ds") is None
+
+
+async def test_negative_decay_rate_is_rejected():
+    with pytest.raises(ValueError):
+        await engram.remember("Fact.", dataset="bad", decay_rate=-1)
+    assert engram._get_store()._meta.get_all_in_dataset("bad") == []
