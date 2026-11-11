@@ -56,6 +56,7 @@ asyncio.run(main())
 | `improve(text, dataset)` | Add content and reset all dataset strengths to 1.0 |
 | `prune(dataset, threshold)` | Remove memories below strength threshold |
 | `forget(dataset)` | Delete all memories in a dataset |
+| `list_datasets()` | List dataset metadata, including `name` and `item_count` |
 
 ## How Memory Decay Works
 
