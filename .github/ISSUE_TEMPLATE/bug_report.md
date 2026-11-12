@@ -4,6 +4,9 @@ about: Something is broken
 labels: bug
 ---
 
+> **Security vulnerability?** Do NOT use this template.
+> Follow [SECURITY.md](../../SECURITY.md) to report vulnerabilities privately.
+
 ## Describe the bug
 
 A clear description of what's wrong.
