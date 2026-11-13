@@ -1,0 +1,17 @@
+# CODEOWNERS
+# These owners are automatically requested for review when the matching files change.
+# Last entry wins if multiple patterns match.
+
+# Default: owner reviews everything
+* @KaranamJyothirmayi
+
+# Core library — any change here requires owner review
+/engram/ @KaranamJyothirmayi
+
+# CI/CD workflows — security-sensitive, always owner-reviewed
+/.github/workflows/ @KaranamJyothirmayi
+
+# Security and legal documents
+/SECURITY.md @KaranamJyothirmayi
+/CLA.md @KaranamJyothirmayi
+/LICENSE @KaranamJyothirmayi

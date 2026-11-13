@@ -1,0 +1,80 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]" pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=engram --cov-report=xml --cov-report=term-missing --cov-fail-under=65
+        # Fails the check if overall coverage drops below 65%
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+
+  security-lint:
+    name: Security Lint (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install bandit
+        run: pip install bandit[toml]
+
+      - name: Run bandit
+        # -ll = report only medium and high severity issues
+        # Skips test files (test code often intentionally uses unsafe patterns)
+        run: bandit -r engram/ -ll -x tests/
+
+  dependency-audit:
+    name: Dependency Audit (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit dependencies
+        # Checks all dependencies in pyproject.toml against the OSV/PyPA advisory databases
+        run: pip-audit --requirement <(pip install -e . --dry-run 2>&1 | grep "Would install" | tr ' ' '\n' | grep "==" | sed 's/^//' ) || pip-audit -r <(pip install -e ".[dev]" --dry-run 2>&1 | grep "Would install" | tr ' ' '\n' | grep "==")
+        continue-on-error: true
+        # continue-on-error: true so a newly disclosed CVE in a dependency
+        # doesn't instantly break all PRs — maintainer reviews the report manually
+
+      - name: Audit installed packages
+        run: |
+          pip install -e ".[dev]"
+          pip-audit
+        continue-on-error: true
