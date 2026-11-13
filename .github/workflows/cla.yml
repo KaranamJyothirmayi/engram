@@ -20,7 +20,7 @@ jobs:
         with:
           path-to-signatures: "signatures/cla.json"
           path-to-document: "https://github.com/KaranamJyothirmayi/engram/blob/main/CLA.md"
-          branch: "main"
+          branch: "cla-signatures"
           allowlist: KaranamJyothirmayi
           create-file-commit-message: "chore: create CLA signatures file"
           signed-commit-message: "chore: CLA signed by @$contributorName"
