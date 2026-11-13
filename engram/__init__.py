@@ -36,7 +36,7 @@ class _EngramStore:
             self._vector.upsert(memory_id, sentence, dataset)
             self._graph.add_memory(memory_id, dataset, entities)
 
-    def recall(self, query: str, datasets: list[str] | None = None) -> list[dict]:
+    def recall(self, query: str, datasets: list[str] | None = None, limit: int | None = None, offset: int = 0) -> list[dict]:
         hits = self._vector.search(query, datasets)
         results = []
         for hit in hits:
@@ -60,11 +60,16 @@ class _EngramStore:
                 "related": related_texts,
             })
         results.sort(key=lambda x: x["score"], reverse=True)
-        return results
+        # Apply pagination after scoring and sorting
+        if offset < 0:
+            offset = 0
+        if limit is not None and limit < 0:
+            limit = 0
+        end = (offset + limit) if limit is not None else None
+        return results[offset:end]
 
     def improve(self, text: str, dataset: str) -> None:
         """Add new content to a dataset and refresh the whole dataset.
-
         Calling improve signals that the dataset is being actively curated,
         so every memory in it is reset to full strength (1.0) — not just the
         newly added text. This deliberately resets Ebbinghaus decay for the
@@ -121,8 +126,8 @@ async def remember(text: str, dataset: str = "default") -> None:
     _get_store().remember(text, dataset)
 
 
-async def recall(query: str, datasets: list[str] | None = None) -> list[dict]:
-    return _get_store().recall(query, datasets)
+async def recall(query: str, datasets: list[str] | None = None, limit: int | None = None, offset: int = 0) -> list[dict]:
+    return _get_store().recall(query, datasets, limit, offset)
 
 
 async def improve(text: str, dataset: str = "default") -> None:

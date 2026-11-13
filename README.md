@@ -52,7 +52,7 @@ asyncio.run(main())
 | Function | Description |
 |---|---|
 | `remember(text, dataset)` | Store text as memory (strength = 1.0) |
-| `recall(query, datasets)` | Search memories; reinforces what's returned |
+| `recall(query, datasets, limit=None, offset=0)` | Search memories; reinforces what's returned. Supports pagination via `limit` and `offset` after scoring. |
 | `improve(text, dataset)` | Add content and reset all dataset strengths to 1.0 |
 | `prune(dataset, threshold)` | Remove memories below strength threshold |
 | `forget(dataset)` | Delete all memories in a dataset |
@@ -71,10 +71,10 @@ strength(t) = S₀ × e^(−k × hours_elapsed)
 
 ```
 engram API (remember / recall / improve / prune / forget)
-    ├── MemoryGraph (NetworkX)    ← entity relationship graph
-    ├── VectorIndex (ChromaDB)   ← semantic similarity search
-    ├── DecayEngine              ← Ebbinghaus strength scoring
-    └── MetaStore (SQLite)       ← metadata + per-memory strength
+    ├── MemoryGraph (NetworkX)   → entity relationship graph
+    ├── VectorIndex (ChromaDB)   → semantic similarity search
+    ├── DecayEngine              → Ebbinghaus strength scoring
+    └── MetaStore (SQLite)       → metadata + per-memory strength
 ```
 
 Data stored in `~/.engram/` by default. Override: `ENGRAM_HOME=/path/to/dir`

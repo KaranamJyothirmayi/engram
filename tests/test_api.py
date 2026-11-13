@@ -70,7 +70,7 @@ async def test_improve_resets_decayed_siblings_to_full_strength():
     await engram.remember("An older fact.", dataset="science")
     store = engram._get_store()
     old_id = store._meta.get_all_in_dataset("science")[0]["id"]
-    store._meta.update_accessed(old_id, 0.1)  # simulate a decayed memory
+    store._meta.update_accessed(old_id, 0.1)   # simulate a decayed memory
     await engram.improve("A newly curated fact.", dataset="science")
     refreshed = store._meta.get_by_ids([old_id])[0]
     assert refreshed["strength"] == pytest.approx(1.0)
@@ -79,7 +79,7 @@ async def test_improve_resets_decayed_siblings_to_full_strength():
 async def test_recall_with_no_datasets_searches_all():
     await engram.remember("Marie Curie was a physicist.", dataset="science")
     await engram.remember("Paris is in France.", dataset="geography")
-    results = await engram.recall("Marie Curie")  # datasets defaults to None
+    results = await engram.recall("Marie Curie")   # datasets defaults to None
     assert any("Marie Curie" in r["text"] for r in results)
 
 
@@ -88,3 +88,35 @@ async def test_recall_isolates_by_dataset():
     await engram.remember("Paris is in France.", dataset="geography")
     results = await engram.recall("Marie Curie", datasets=["geography"])
     assert all(r["dataset"] == "geography" for r in results)
+
+
+async def test_recall_pagination_limit():
+    for i in range(12):
+        await engram.remember(f"Science fact number {i} about physics.", dataset="pagination")
+    results = await engram.recall("science physics", datasets=["pagination"], limit=5)
+    assert len(results) == 5
+
+
+async def test_recall_pagination_offset():
+    for i in range(12):
+        await engram.remember(f"Science fact number {i} about physics.", dataset="pagination")
+    page1 = await engram.recall("science physics", datasets=["pagination"], limit=5, offset=0)
+    page2 = await engram.recall("science physics", datasets=["pagination"], limit=5, offset=5)
+    assert len(page1) == 5
+    assert len(page2) == 5
+    # Pages should differ
+    assert page1[0]["text"] != page2[0]["text"]
+
+
+async def test_recall_pagination_offset_beyond():
+    for i in range(5):
+        await engram.remember(f"Fact {i}", dataset="small")
+    results = await engram.recall("fact", datasets=["small"], limit=10, offset=20)
+    assert results == []
+
+
+async def test_recall_pagination_defaults_return_all():
+    for i in range(3):
+        await engram.remember(f"Unique fact {i} for default test.", dataset="defaults")
+    results = await engram.recall("unique fact", datasets=["defaults"])
+    assert len(results) >= 3
