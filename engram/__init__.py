@@ -96,6 +96,9 @@ class _EngramStore:
         self._vector.delete_by_dataset(dataset)
         self._graph.remove_by_dataset(dataset)
 
+    def stats(self, dataset: str) -> dict:
+        return self._meta.stats(dataset)
+
 
 _store: _EngramStore | None = None
 
@@ -140,3 +143,7 @@ async def forget(dataset: str) -> None:
 async def list_datasets() -> list[dict]:
     """Return dataset metadata, including each dataset's name and item count."""
     return _get_store()._meta.list_datasets()
+
+
+async def stats(dataset: str = "default") -> dict:
+    return _get_store().stats(dataset)

@@ -55,3 +55,37 @@ def test_list_datasets(store):
     store.insert("B", "ds2")
     names = [d["name"] for d in store.list_datasets()]
     assert "ds1" in names and "ds2" in names
+
+
+def test_stats_empty_dataset(store):
+    result = store.stats("empty")
+    assert result["name"] == "empty"
+    assert result["count"] == 0
+    assert result["avg_strength"] is None
+    assert result["min_strength"] is None
+    assert result["max_strength"] is None
+    assert result["oldest_memory"] is None
+    assert result["newest_memory"] is None
+
+
+def test_stats_single_memory(store):
+    store.insert("Hello world", "test")
+    result = store.stats("test")
+    assert result["name"] == "test"
+    assert result["count"] == 1
+    assert result["avg_strength"] == pytest.approx(1.0)
+    assert result["min_strength"] == pytest.approx(1.0)
+    assert result["max_strength"] == pytest.approx(1.0)
+    assert result["oldest_memory"] is not None
+    assert result["newest_memory"] is not None
+
+
+def test_stats_multiple_memories(store):
+    id1 = store.insert("A", "test")
+    store.insert("B", "test")
+    store.update_accessed(id1, 0.4)
+    result = store.stats("test")
+    assert result["count"] == 2
+    assert result["min_strength"] == pytest.approx(0.4)
+    assert result["max_strength"] == pytest.approx(1.0)
+    assert result["avg_strength"] == pytest.approx(0.7)
