@@ -29,10 +29,12 @@ class _EngramStore:
         self._graph = MemoryGraph(graph_path)
         self._vector = VectorIndex(vector_path)
 
-    def remember(self, text: str, dataset: str) -> None:
+    def remember(self, text: str, dataset: str, strength: float = 1.0) -> None:
+        if not 0.0 <= strength <= 1.0:
+            raise ValueError("strength must be between 0.0 and 1.0")
         sentences, entities = extract(text)
         for sentence in sentences:
-            memory_id = self._meta.insert(sentence, dataset)
+            memory_id = self._meta.insert(sentence, dataset, strength=strength)
             self._vector.upsert(memory_id, sentence, dataset)
             self._graph.add_memory(memory_id, dataset, entities)
 
@@ -117,8 +119,11 @@ def reset() -> None:
     _store = None
 
 
-async def remember(text: str, dataset: str = "default") -> None:
-    _get_store().remember(text, dataset)
+async def remember(
+    text: str, dataset: str = "default", strength: float = 1.0
+) -> None:
+    """Store each extracted sentence with an initial strength in [0.0, 1.0]."""
+    _get_store().remember(text, dataset, strength=strength)
 
 
 async def recall(query: str, datasets: list[str] | None = None) -> list[dict]:
