@@ -52,6 +52,25 @@ jobs:
         # Skips test files (test code often intentionally uses unsafe patterns)
         run: bandit -r engram/ -ll -x tests/
 
+  changelog-fragment:
+    name: Changelog Fragment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check changelog fragment exists
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          if ! ls changelog/${PR_NUMBER}.*.md 2>/dev/null | grep -q .; then
+            echo "❌ Missing changelog fragment: changelog/${PR_NUMBER}.<type>.md"
+            echo "   Add a file named changelog/${PR_NUMBER}.feat.md (or .fix/.test/.docs/.chore)"
+            echo "   with a one-line description of your change."
+            exit 1
+          fi
+          echo "✅ Changelog fragment found."
+
   dependency-audit:
     name: Dependency Audit (pip-audit)
     runs-on: ubuntu-latest
