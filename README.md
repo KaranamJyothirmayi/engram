@@ -90,12 +90,22 @@ asyncio.run(main())
 
 | Function | Description |
 |---|---|
-| `remember(text, dataset, decay_rate=None)` | Store text as memory (initial strength = 1.0) |
+| `remember(text, dataset="default", strength=1.0)` | Store text with initial strength between 0.0 and 1.0 |
 | `recall(query, datasets, limit, offset)` | Search memories semantically; reinforces what's returned |
 | `improve(text, dataset)` | Add content and reset all dataset strengths to 1.0 |
 | `prune(dataset, threshold)` | Remove memories below strength threshold |
 | `forget(dataset)` | Delete all memories in a dataset |
 | `list_datasets()` | List all datasets with name and live item count |
+
+Set `strength` when storing lower-priority information:
+
+```python
+await engram.remember("Nice to know.", dataset="work", strength=0.5)
+```
+
+Every sentence extracted from the text starts at that strength. The default remains
+1.0; out-of-range or non-finite values raise `ValueError` before storing memories.
+Normal decay, recall reinforcement and pruning still apply afterward.
 
 ### Configuration
 
