@@ -88,3 +88,21 @@ async def test_recall_isolates_by_dataset():
     await engram.remember("Paris is in France.", dataset="geography")
     results = await engram.recall("Marie Curie", datasets=["geography"])
     assert all(r["dataset"] == "geography" for r in results)
+
+
+async def test_stats_returns_correct_fields():
+    await engram.remember("Hello world.", dataset="test")
+    result = await engram.stats("test")
+    assert all(
+        k in result
+        for k in ("name", "count", "avg_strength", "min_strength", "max_strength", "oldest_memory", "newest_memory")
+    )
+    assert result["name"] == "test"
+    assert result["count"] >= 1
+    assert result["avg_strength"] is not None
+
+
+async def test_stats_empty_dataset():
+    result = await engram.stats("nonexistent")
+    assert result["count"] == 0
+    assert result["avg_strength"] is None
