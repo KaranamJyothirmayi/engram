@@ -11,6 +11,8 @@ Types: `feat` · `fix` · `test` · `docs` · `chore`
 
 _PRs merged to `main` but not yet released._
 
+- feat: allow initial memory strength through `remember(strength=...)` (#40)
+
 - feat: add `list_datasets()` async API with live memory counts after pruning (#9)
 
 ---
