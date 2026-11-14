@@ -87,4 +87,11 @@ class MetaStore:
         self._conn.commit()
 
     def list_datasets(self) -> list[dict]:
-        return [dict(r) for r in self._conn.execute("SELECT * FROM datasets").fetchall()]
+        # Count live rows: the cached counter can be stale after pruning memories.
+        rows = self._conn.execute("""
+            SELECT d.name, d.created_at, COUNT(m.id) AS item_count
+            FROM datasets AS d
+            LEFT JOIN memories AS m ON m.dataset = d.name
+            GROUP BY d.name, d.created_at
+        """).fetchall()
+        return [dict(r) for r in rows]

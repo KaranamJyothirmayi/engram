@@ -135,3 +135,8 @@ async def prune(dataset: str = "default", threshold: float = 0.2) -> int:
 
 async def forget(dataset: str) -> None:
     _get_store().forget(dataset)
+
+
+async def list_datasets() -> list[dict]:
+    """Return dataset metadata, including each dataset's name and item count."""
+    return _get_store()._meta.list_datasets()
