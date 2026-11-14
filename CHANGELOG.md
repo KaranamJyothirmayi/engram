@@ -11,6 +11,8 @@ Types: `feat` · `fix` · `test` · `docs` · `chore`
 
 _PRs merged to `main` but not yet released._
 
+- feat: add `list_datasets()` async API with live memory counts after pruning (#9)
+
 ---
 
 ## 0.1.0 — 2026-11-12

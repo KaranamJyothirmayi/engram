@@ -168,3 +168,7 @@ async def list_memories(
     max_strength: float | None = None,
 ) -> list[dict]:
     return _get_store().list_memories(dataset, min_strength, max_strength)
+
+async def list_datasets() -> list[dict]:
+    """Return dataset metadata, including each dataset's name and item count."""
+    return _get_store()._meta.list_datasets()
