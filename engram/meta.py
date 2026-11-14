@@ -31,13 +31,13 @@ class MetaStore:
         """)
         self._conn.commit()
 
-    def insert(self, text: str, dataset: str) -> str:
+    def insert(self, text: str, dataset: str, strength: float = 1.0) -> str:
         memory_id = str(uuid.uuid4())
         now = _now()
         self._conn.execute(
             "INSERT INTO memories (id, dataset, text, strength, created_at, last_accessed_at)"
-            " VALUES (?, ?, ?, 1.0, ?, ?)",
-            (memory_id, dataset, text, now, now),
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            (memory_id, dataset, text, strength, now, now),
         )
         self._conn.execute(
             "INSERT OR IGNORE INTO datasets (name, created_at, item_count) VALUES (?, ?, 0)",
