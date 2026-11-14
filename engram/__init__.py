@@ -96,6 +96,32 @@ class _EngramStore:
         self._vector.delete_by_dataset(dataset)
         self._graph.remove_by_dataset(dataset)
 
+    def list_memories(
+        self,
+        dataset: str,
+        min_strength: float | None = None,
+        max_strength: float | None = None,
+    ) -> list[dict]:
+        rows = self._meta.get_all_in_dataset(dataset)
+        results = []
+        for row in rows:
+            strength = current_strength(
+                row["strength"],
+                datetime.fromisoformat(row["last_accessed_at"]),
+            )
+            if min_strength is not None and strength < min_strength:
+                continue
+            if max_strength is not None and strength > max_strength:
+                continue
+            results.append({
+                "id": row["id"],
+                "text": row["text"],
+                "strength": strength,
+                "dataset": row["dataset"],
+                "last_accessed_at": row["last_accessed_at"],
+            })
+        return results
+
 
 _store: _EngramStore | None = None
 
@@ -136,6 +162,12 @@ async def prune(dataset: str = "default", threshold: float = 0.2) -> int:
 async def forget(dataset: str) -> None:
     _get_store().forget(dataset)
 
+async def list_memories(
+    dataset: str = "default",
+    min_strength: float | None = None,
+    max_strength: float | None = None,
+) -> list[dict]:
+    return _get_store().list_memories(dataset, min_strength, max_strength)
 
 async def list_datasets() -> list[dict]:
     """Return dataset metadata, including each dataset's name and item count."""
