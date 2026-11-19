@@ -38,6 +38,23 @@ class _EngramStore:
             self._vector.upsert(memory_id, sentence, dataset)
             self._graph.add_memory(memory_id, dataset, entities)
 
+    def remember_many(
+        self, texts: list[str], dataset: str, strength: float = 1.0
+    ) -> int:
+        if not 0.0 <= strength <= 1.0:
+            raise ValueError("strength must be between 0.0 and 1.0")
+        count = 0
+        for text in texts:
+            if not text or not text.strip():
+                continue
+            sentences, entities = extract(text)
+            for sentence in sentences:
+                memory_id = self._meta.insert(sentence, dataset, strength=strength)
+                self._vector.upsert(memory_id, sentence, dataset)
+                self._graph.add_memory(memory_id, dataset, entities)
+                count += 1
+        return count
+
     def recall(self, query: str, datasets: list[str] | None = None) -> list[dict]:
         hits = self._vector.search(query, datasets)
         results = []
@@ -150,6 +167,13 @@ async def remember(
 ) -> None:
     """Store each extracted sentence with an initial strength in [0.0, 1.0]."""
     _get_store().remember(text, dataset, strength=strength)
+
+
+async def remember_many(
+    texts: list[str], dataset: str = "default", strength: float = 1.0
+) -> int:
+    """Bulk-store a list of texts; returns the total number of sentences stored."""
+    return _get_store().remember_many(texts, dataset, strength=strength)
 
 
 async def recall(query: str, datasets: list[str] | None = None) -> list[dict]:
