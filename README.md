@@ -115,6 +115,23 @@ Normal decay, recall reinforcement and pruning still apply afterward.
 | `set_decay_rate(dataset, rate)` | Set a per-dataset decay rate; `None` reverts to global |
 | `reset()` | Clear the in-memory store reference (useful in tests) |
 
+### Scoped sessions
+
+Use `session()` to configure a store for a block and automatically reset the
+module's store reference afterward, including when the block raises or is cancelled:
+
+```python
+async with engram.session(home="./agent-memory") as mem:
+    await mem.remember("The sky is blue.", dataset="science")
+    results = await mem.recall("sky", datasets=["science"])
+```
+
+The yielded module exposes the same API as `engram`. Omitting `home` creates a
+fresh in-memory store. Resetting the reference does not delete persisted files;
+using the same `home` again reopens its data. Sessions replace the module-global
+store rather than isolating tasks: do not nest or overlap sessions, or reconfigure
+the module inside a session. A previously configured store is not restored on exit.
+
 ---
 
 ## How Memory Decay Works
