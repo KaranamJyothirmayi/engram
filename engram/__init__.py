@@ -38,8 +38,14 @@ class _EngramStore:
             self._vector.upsert(memory_id, sentence, dataset)
             self._graph.add_memory(memory_id, dataset, entities)
 
-    def recall(self, query: str, datasets: list[str] | None = None) -> list[dict]:
-        hits = self._vector.search(query, datasets)
+    def recall(
+        self,
+        query: str,
+        datasets: list[str] | None = None,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[dict]:
+        hits = self._vector.search(query, datasets, top_k=limit + offset if limit is not None else 50)
         results = []
         for hit in hits:
             rows = self._meta.get_by_ids([hit["id"]])
@@ -62,6 +68,9 @@ class _EngramStore:
                 "related": related_texts,
             })
         results.sort(key=lambda x: x["score"], reverse=True)
+        results = results[offset:]
+        if limit is not None:
+            results = results[:limit]
         return results
 
     def improve(self, text: str, dataset: str) -> None:
@@ -152,8 +161,13 @@ async def remember(
     _get_store().remember(text, dataset, strength=strength)
 
 
-async def recall(query: str, datasets: list[str] | None = None) -> list[dict]:
-    return _get_store().recall(query, datasets)
+async def recall(
+    query: str,
+    datasets: list[str] | None = None,
+    limit: int | None = None,
+    offset: int = 0,
+) -> list[dict]:
+    return _get_store().recall(query, datasets, limit=limit, offset=offset)
 
 
 async def improve(text: str, dataset: str = "default") -> None:
