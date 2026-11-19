@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import sys
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -145,11 +147,22 @@ def reset() -> None:
     _store = None
 
 
+@asynccontextmanager
+async def session(home: str | Path | None = None):
+    """Configure the global store for a block and reset its reference on exit."""
+    configure(home)
+    try:
+        yield sys.modules[__name__]
+    finally:
+        reset()
+
+
 async def remember(
     text: str, dataset: str = "default", strength: float = 1.0
 ) -> None:
     """Store each extracted sentence with an initial strength in [0.0, 1.0]."""
     _get_store().remember(text, dataset, strength=strength)
+
 
 
 async def recall(query: str, datasets: list[str] | None = None) -> list[dict]:
