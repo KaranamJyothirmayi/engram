@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from .decay import current_strength, reinforce
+from .decay import current_strength, reinforce, RECALL_BOOST
 from .extractor import extract
 from .graph import MemoryGraph
 from .meta import MetaStore
@@ -15,7 +15,7 @@ _ENGRAM_HOME = Path(os.environ.get("ENGRAM_HOME", Path.home() / ".engram"))
 
 
 class _EngramStore:
-    def __init__(self, home: Path | None = None):
+    def __init__(self, home: Path | None = None, recall_boost: float = RECALL_BOOST):
         if home:
             home.mkdir(parents=True, exist_ok=True)
             meta_path = str(home / "meta.db")
@@ -28,6 +28,7 @@ class _EngramStore:
         self._meta = MetaStore(meta_path)
         self._graph = MemoryGraph(graph_path)
         self._vector = VectorIndex(vector_path)
+        self._recall_boost = recall_boost
 
     def remember(self, text: str, dataset: str, strength: float = 1.0) -> None:
         if not 0.0 <= strength <= 1.0:
@@ -52,7 +53,7 @@ class _EngramStore:
             related_texts = [
                 r["text"] for r in self._meta.get_by_ids(related_ids)
             ] if related_ids else []
-            new_strength = reinforce(strength)
+            new_strength = reinforce(strength, self._recall_boost)
             self._meta.update_accessed(hit["id"], new_strength)
             results.append({
                 "text": row["text"],
@@ -135,9 +136,9 @@ def _get_store() -> _EngramStore:
     return _store
 
 
-def configure(home: str | Path | None = None) -> None:
+def configure(home: str | Path | None = None, recall_boost: float = RECALL_BOOST) -> None:
     global _store
-    _store = _EngramStore(Path(home) if home else None)
+    _store = _EngramStore(Path(home) if home else None, recall_boost=recall_boost)
 
 
 def reset() -> None:
