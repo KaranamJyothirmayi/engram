@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import inspect
 import os
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -10,12 +12,36 @@ from .graph import MemoryGraph
 from .meta import MetaStore
 from .vector import VectorIndex
 
+
+# validating decay_fn is required, as we can catch the errors before hand while passing the custom_fn through engram.configure() 
+def _validate_decay_fn(fn: object) -> None:
+    if not callable(fn):
+        raise TypeError("decay_fn must be callable")
+    sig = inspect.signature(fn)  # type: ignore[arg-type]
+    required = [
+        p
+        for p in sig.parameters.values()
+        if p.default is inspect.Parameter.empty
+        and p.kind
+        not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+    ]
+    if len(required) != 2:
+        raise TypeError(
+            "decay_fn must accept exactly 2 positional arguments:"
+            " (strength: float, hours_elapsed: float)"
+        )
+
 # Evaluated once at import time; set ENGRAM_HOME before importing engram.
 _ENGRAM_HOME = Path(os.environ.get("ENGRAM_HOME", Path.home() / ".engram"))
 
 
 class _EngramStore:
-    def __init__(self, home: Path | None = None):
+    def __init__(
+        self,
+        home: Path | None = None,
+        decay_fn: Callable[[float, float], float] | None = None,
+    ):
+        self._decay_fn = decay_fn
         if home:
             home.mkdir(parents=True, exist_ok=True)
             meta_path = str(home / "meta.db")
@@ -47,7 +73,7 @@ class _EngramStore:
                 continue
             row = rows[0]
             last = datetime.fromisoformat(row["last_accessed_at"])
-            strength = current_strength(row["strength"], last)
+            strength = current_strength(row["strength"], last, self._decay_fn)
             related_ids = self._graph.get_related(hit["id"])
             related_texts = [
                 r["text"] for r in self._meta.get_by_ids(related_ids)
@@ -85,6 +111,7 @@ class _EngramStore:
             if current_strength(
                 row["strength"],
                 datetime.fromisoformat(row["last_accessed_at"]),
+                self._decay_fn,
             ) < threshold
         ]
         if weak_ids:
@@ -110,6 +137,7 @@ class _EngramStore:
             strength = current_strength(
                 row["strength"],
                 datetime.fromisoformat(row["last_accessed_at"]),
+                self._decay_fn,
             )
             if min_strength is not None and strength < min_strength:
                 continue
@@ -135,9 +163,14 @@ def _get_store() -> _EngramStore:
     return _store
 
 
-def configure(home: str | Path | None = None) -> None:
+def configure(
+    home: str | Path | None = None,
+    decay_fn: Callable[[float, float], float] | None = None,
+) -> None:
+    if decay_fn is not None:
+        _validate_decay_fn(decay_fn)
     global _store
-    _store = _EngramStore(Path(home) if home else None)
+    _store = _EngramStore(Path(home) if home else None, decay_fn=decay_fn)
 
 
 def reset() -> None:
