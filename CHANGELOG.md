@@ -11,6 +11,8 @@ Types: `feat` · `fix` · `test` · `docs` · `chore`
 
 _PRs merged to `main` but not yet released._
 
+- feat: support pluggable custom decay function via `engram.configure(decay_fn=custom_fn)` — replaces default Ebbinghaus exponential at all call sites (`recall`, `prune`, `list_memories`) -- (#41)
+
 - test: cover empty input, multi-sentence storage, dataset isolation, forget and prune edge cases (#47)
 
 - feat: add `list_datasets()` async API with live memory counts after pruning (#9)
