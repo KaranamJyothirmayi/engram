@@ -152,6 +152,9 @@ class _EngramStore:
             })
         return results
 
+    def stats(self, dataset: str) -> dict | None:
+        return self._meta.stats(dataset)
+
 
 _store: _EngramStore | None = None
 
@@ -210,3 +213,8 @@ async def list_memories(
 async def list_datasets() -> list[dict]:
     """Return dataset metadata, including each dataset's name and item count."""
     return _get_store()._meta.list_datasets()
+
+
+async def stats(dataset: str = "default") -> dict | None:
+    """Return health metrics for a dataset, or None if the dataset is empty."""
+    return _get_store().stats(dataset)

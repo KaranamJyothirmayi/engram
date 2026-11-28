@@ -95,3 +95,30 @@ class MetaStore:
             GROUP BY d.name, d.created_at
         """).fetchall()
         return [dict(r) for r in rows]
+
+    def stats(self, dataset: str) -> dict | None:
+        row = self._conn.execute(
+            """
+            SELECT
+                COUNT(*)        AS count,
+                AVG(strength)   AS avg_strength,
+                MIN(strength)   AS min_strength,
+                MAX(strength)   AS max_strength,
+                MIN(created_at) AS oldest_memory,
+                MAX(created_at) AS newest_memory
+            FROM memories
+            WHERE dataset = ?
+            """,
+            (dataset,),
+        ).fetchone()
+        if row is None or row["count"] == 0:
+            return None
+        return {
+            "name": dataset,
+            "count": row["count"],
+            "avg_strength": round(row["avg_strength"], 4),
+            "min_strength": round(row["min_strength"], 4),
+            "max_strength": round(row["max_strength"], 4),
+            "oldest_memory": row["oldest_memory"],
+            "newest_memory": row["newest_memory"],
+        }
